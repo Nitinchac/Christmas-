@@ -144,9 +144,7 @@
     function updateSnow(timestamp) {
       ctxSnow.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
 
-      if (snowflakes.length && !snowStartTime) {
-        snowStartTime = timestamp;
-      }
+      if (snowflakes.length && !snowStartTime) snowStartTime = timestamp;
 
       snowflakes.forEach(f => {
         f.y += f.vy;
@@ -194,55 +192,35 @@
     motionBtn.addEventListener('click', enableMotion);
 
     let scratching = false;
-    let imageDrawn = false;
 
     function triggerFrost() {
       scratchCanvas.style.display = 'block';
-      ctxScratch.globalAlpha = 0;
-      drawFrost();
 
-      let opacity = 0;
-      const fade = setInterval(() => {
-        opacity += 0.02;
-        ctxScratch.globalAlpha = opacity;
-        drawFrost();
+      const img = new Image();
+      img.src = 'gift.jpg';
 
-        if (opacity >= 1) {
-          clearInterval(fade);
-          revealText.style.opacity = 1;
-        }
-      }, 30);
-    }
+      img.onload = () => {
+        // 1. Draw image FIRST
+        const scale = Math.max(
+          scratchCanvas.width / img.width,
+          scratchCanvas.height / img.height
+        );
+        const x = (scratchCanvas.width - img.width * scale) / 2;
+        const y = (scratchCanvas.height - img.height * scale) / 2;
+        ctxScratch.drawImage(img, x, y, img.width * scale, img.height * scale);
 
-    function drawFrost() {
-      ctxScratch.clearRect(0, 0, scratchCanvas.width, scratchCanvas.height);
-      ctxScratch.fillStyle = '#e5e7eb';
-      ctxScratch.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
+        // 2. Draw frost ON TOP
+        ctxScratch.fillStyle = '#e5e7eb';
+        ctxScratch.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
 
-      if (!imageDrawn) {
-        const img = new Image();
-        img.src = 'gift.jpg';
-        img.onload = () => {
-          const scale = Math.max(
-            scratchCanvas.width / img.width,
-            scratchCanvas.height / img.height
-          );
-          const x = (scratchCanvas.width - img.width * scale) / 2;
-          const y = (scratchCanvas.height - img.height * scale) / 2;
-
-          ctxScratch.globalCompositeOperation = 'destination-over';
-          ctxScratch.drawImage(img, x, y, img.width * scale, img.height * scale);
-          ctxScratch.globalCompositeOperation = 'source-over';
-
-          imageDrawn = true;
-        };
-      }
+        revealText.style.opacity = 1;
+      };
     }
 
     function scratch(x, y) {
       ctxScratch.globalCompositeOperation = 'destination-out';
       ctxScratch.beginPath();
-      ctxScratch.arc(x, y, 70, 0, Math.PI * 2);
+      ctxScratch.arc(x, y, 80, 0, Math.PI * 2);
       ctxScratch.fill();
       ctxScratch.globalCompositeOperation = 'source-over';
     }
@@ -257,4 +235,4 @@
     updateSnow();
   </script>
 </body>
-  </html>
+</html>
