@@ -1,8 +1,10 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Christmas Eve Surprise</title>
+
   <style>
     html, body {
       margin: 0;
@@ -13,75 +15,83 @@
       font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
       background: radial-gradient(circle at top, #0b1d3a, #020617);
       color: #fff;
-    }canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
+    }
 
-#message {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 1.4rem;
-  letter-spacing: 1px;
-  text-align: center;
-  opacity: 0.95;
-  pointer-events: none;
-  transition: opacity 1s ease;
-}
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
 
-#hint {
-  display: block;
-  margin-top: 12px;
-  font-size: 0.9rem;
-  opacity: 0.75;
-}
+    #message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.4rem;
+      text-align: center;
+      opacity: 0.95;
+      transition: opacity 1s ease;
+      pointer-events: none;
+    }
 
-#motionBtn {
-  position: absolute;
-  top: calc(50% + 80px);
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 10px 18px;
-  font-size: 14px;
-  border-radius: 20px;
-  border: none;
-  background: rgba(255,255,255,0.2);
-  color: white;
-  backdrop-filter: blur(6px);
-}
+    #hint {
+      display: block;
+      margin-top: 10px;
+      font-size: 0.9rem;
+      opacity: 0.7;
+    }
 
-#scratch {
-  display: none;
-}
+    #motionBtn {
+      position: absolute;
+      top: calc(50% + 90px);
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 18px;
+      font-size: 14px;
+      border-radius: 20px;
+      border: none;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      backdrop-filter: blur(6px);
+    }
 
-#revealText {
-  position: absolute;
-  bottom: 8%;
-  width: 100%;
-  text-align: center;
-  font-size: 1.1rem;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 1s ease;
-}
+    #revealText {
+      position: absolute;
+      bottom: 8%;
+      width: 100%;
+      text-align: center;
+      font-size: 1.1rem;
+      opacity: 0;
+      transition: opacity 1s ease;
+      pointer-events: none;
+    }
 
+    #scratch {
+      display: none;
+    }
   </style>
 </head>
+
 <body>
   <canvas id="sky"></canvas>
   <canvas id="snow"></canvas>
-  <canvas id="scratch"></canvas>  <div id="message">
+  <canvas id="scratch"></canvas>
+
+  <div id="message">
     Christmas is almost here ✨
     <span id="hint">Shake your phone</span>
-  </div><button id="motionBtn">Tap to allow magic ✨</button>
+  </div>
 
-  <div id="revealText">Rub the frost to reveal your surprise</div>  <script>
+  <button id="motionBtn">Tap to allow magic ✨</button>
+
+  <div id="revealText">Rub the frost to reveal your surprise</div>
+
+  <script>
     const sky = document.getElementById('sky');
     const snowCanvas = document.getElementById('snow');
     const scratchCanvas = document.getElementById('scratch');
+
     const ctxSky = sky.getContext('2d');
     const ctxSnow = snowCanvas.getContext('2d');
     const ctxScratch = scratchCanvas.getContext('2d');
@@ -97,20 +107,25 @@
       });
       drawStars();
     }
+
     window.addEventListener('resize', resize);
 
-    // Stars
     function drawStars() {
       ctxSky.clearRect(0, 0, sky.width, sky.height);
       for (let i = 0; i < 120; i++) {
         ctxSky.beginPath();
-        ctxSky.arc(Math.random() * sky.width, Math.random() * sky.height, Math.random() * 1.5 + 0.5, 0, Math.PI * 2);
+        ctxSky.arc(
+          Math.random() * sky.width,
+          Math.random() * sky.height,
+          Math.random() * 1.5 + 0.5,
+          0,
+          Math.PI * 2
+        );
         ctxSky.fillStyle = 'rgba(255,255,255,0.8)';
         ctxSky.fill();
       }
     }
 
-    // Snow + timing
     let snowflakes = [];
     let snowStartTime = null;
     let frostTriggered = false;
@@ -121,7 +136,7 @@
           x: Math.random() * snowCanvas.width,
           y: Math.random() * snowCanvas.height,
           r: Math.random() * 3 + 1,
-          vy: Math.random() * 1 + 0.5
+          vy: Math.random() * 1 + 0.6
         });
       }
     }
@@ -129,7 +144,9 @@
     function updateSnow(timestamp) {
       ctxSnow.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
 
-      if (snowflakes.length && !snowStartTime) snowStartTime = timestamp;
+      if (snowflakes.length && !snowStartTime) {
+        snowStartTime = timestamp;
+      }
 
       snowflakes.forEach(f => {
         f.y += f.vy;
@@ -148,19 +165,20 @@
       requestAnimationFrame(updateSnow);
     }
 
-    // Motion permission + shake
     function handleShake(e) {
       const acc = e.accelerationIncludingGravity;
       if (!acc) return;
-      const total = Math.abs(acc.x) + Math.abs(acc.y) + Math.abs(acc.z);
-      if (total > 22) {
+
+      const force = Math.abs(acc.x) + Math.abs(acc.y) + Math.abs(acc.z);
+      if (force > 22) {
         addSnow(20);
         message.style.opacity = Math.max(0, message.style.opacity - 0.05);
       }
     }
 
     function enableMotion() {
-      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+      if (typeof DeviceMotionEvent !== 'undefined' &&
+          typeof DeviceMotionEvent.requestPermission === 'function') {
         DeviceMotionEvent.requestPermission().then(res => {
           if (res === 'granted') {
             window.addEventListener('devicemotion', handleShake);
@@ -175,8 +193,8 @@
 
     motionBtn.addEventListener('click', enableMotion);
 
-    // Frost + scratch
     let scratching = false;
+    let imageDrawn = false;
 
     function triggerFrost() {
       scratchCanvas.style.display = 'block';
@@ -188,6 +206,7 @@
         opacity += 0.02;
         ctxScratch.globalAlpha = opacity;
         drawFrost();
+
         if (opacity >= 1) {
           clearInterval(fade);
           revealText.style.opacity = 1;
@@ -200,32 +219,42 @@
       ctxScratch.fillStyle = '#e5e7eb';
       ctxScratch.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
 
-      // Image underneath
-      const img = new Image();
-      img.src = 'gift.jpg';
-      img.onload = () => {
-        const scale = Math.max(scratchCanvas.width / img.width, scratchCanvas.height / img.height);
-        const x = (scratchCanvas.width - img.width * scale) / 2;
-        const y = (scratchCanvas.height - img.height * scale) / 2;
-        ctxScratch.globalCompositeOperation = 'destination-over';
-        ctxScratch.drawImage(img, x, y, img.width * scale, img.height * scale);
-        ctxScratch.globalCompositeOperation = 'source-over';
-      };
+      if (!imageDrawn) {
+        const img = new Image();
+        img.src = 'gift.jpg';
+        img.onload = () => {
+          const scale = Math.max(
+            scratchCanvas.width / img.width,
+            scratchCanvas.height / img.height
+          );
+          const x = (scratchCanvas.width - img.width * scale) / 2;
+          const y = (scratchCanvas.height - img.height * scale) / 2;
+
+          ctxScratch.globalCompositeOperation = 'destination-over';
+          ctxScratch.drawImage(img, x, y, img.width * scale, img.height * scale);
+          ctxScratch.globalCompositeOperation = 'source-over';
+
+          imageDrawn = true;
+        };
+      }
     }
 
     function scratch(x, y) {
       ctxScratch.globalCompositeOperation = 'destination-out';
       ctxScratch.beginPath();
-      ctxScratch.arc(x, y, 40, 0, Math.PI * 2);
+      ctxScratch.arc(x, y, 70, 0, Math.PI * 2);
       ctxScratch.fill();
       ctxScratch.globalCompositeOperation = 'source-over';
     }
 
     scratchCanvas.addEventListener('pointerdown', () => scratching = true);
     scratchCanvas.addEventListener('pointerup', () => scratching = false);
-    scratchCanvas.addEventListener('pointermove', e => scratching && scratch(e.clientX, e.clientY));
+    scratchCanvas.addEventListener('pointermove', e => {
+      if (scratching) scratch(e.clientX, e.clientY);
+    });
 
     resize();
     updateSnow();
-  </script></body>
-</html>
+  </script>
+</body>
+  </html>
