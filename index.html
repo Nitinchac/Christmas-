@@ -105,7 +105,9 @@
 
     // Snow
     let snowflakes = [];
-    let snowIntensity = 0;
+    let snowStartTime = null;
+    let frostTimerTriggered = false;
+
     function addSnow(count) {
       for (let i = 0; i < count; i++) {
         snowflakes.push({
@@ -117,8 +119,13 @@
       }
     }
 
-    function updateSnow() {
+    function updateSnow(timestamp) {
       ctxSnow.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+
+      if (snowflakes.length > 0 && !snowStartTime) {
+        snowStartTime = timestamp;
+      }
+
       snowflakes.forEach(f => {
         f.y += f.vy;
         if (f.y > snowCanvas.height) f.y = -5;
@@ -128,11 +135,13 @@
         ctxSnow.fill();
       });
 
-      if (snowflakes.length > 600 && !frostActive) {
+      if (snowStartTime && !frostTimerTriggered && timestamp - snowStartTime > 5000) {
+        frostTimerTriggered = true;
         triggerFrost();
       }
 
       requestAnimationFrame(updateSnow);
+    }
     }
 
     // Shake detection
@@ -160,7 +169,21 @@
       frostActive = true;
       scratchCanvas.style.display = 'block';
       revealText.style.display = 'block';
+      revealText.style.opacity = '0';
+
       drawFrost();
+
+      let opacity = 0;
+      const fade = setInterval(() => {
+        opacity += 0.02;
+        ctxScratch.globalAlpha = opacity;
+        drawFrost();
+        if (opacity >= 1) {
+          ctxScratch.globalAlpha = 1;
+          revealText.style.opacity = '1';
+          clearInterval(fade);
+        }
+      }, 30);
     }
 
     function drawFrost() {
@@ -187,8 +210,25 @@
       img.src = 'gift.jpg';
       img.onload = () => {
         ctxScratch.globalCompositeOperation = 'destination-over';
-        ctxScratch.drawImage(img, 0, 0, scratchCanvas.width, scratchCanvas.height);
+
+        const scale = Math.max(
+          scratchCanvas.width / img.width,
+          scratchCanvas.height / img.height
+        );
+
+        const x = (scratchCanvas.width - img.width * scale) / 2;
+        const y = (scratchCanvas.height - img.height * scale) / 2;
+
+        ctxScratch.drawImage(
+          img,
+          x,
+          y,
+          img.width * scale,
+          img.height * scale
+        );
+
         ctxScratch.globalCompositeOperation = 'source-over';
+      };
       };
     }
 
