@@ -1,0 +1,213 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Christmas Eve Surprise</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(circle at top, #0b1d3a, #020617);
+      color: #fff;
+    }canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+#message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.4rem;
+  letter-spacing: 1px;
+  text-align: center;
+  opacity: 0.9;
+  pointer-events: none;
+  transition: opacity 1s ease;
+}
+
+#hint {
+  display: block;
+  margin-top: 12px;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+#scratch {
+  display: none;
+}
+
+#revealText {
+  position: absolute;
+  bottom: 8%;
+  width: 100%;
+  text-align: center;
+  font-size: 1.1rem;
+  opacity: 0.85;
+  display: none;
+  pointer-events: none;
+}
+
+  </style>
+</head>
+<body>
+  <canvas id="sky"></canvas>
+  <canvas id="snow"></canvas>
+  <canvas id="scratch"></canvas>  <div id="message">
+    Christmas is almost here ✨
+    <span id="hint">Shake your phone</span>
+  </div>  <div id="revealText">Rub the frost to reveal your surprise</div>  <script>
+    const sky = document.getElementById('sky');
+    const snowCanvas = document.getElementById('snow');
+    const scratchCanvas = document.getElementById('scratch');
+    const ctxSky = sky.getContext('2d');
+    const ctxSnow = snowCanvas.getContext('2d');
+    const ctxScratch = scratchCanvas.getContext('2d');
+    const message = document.getElementById('message');
+    const revealText = document.getElementById('revealText');
+
+    function resize() {
+      [sky, snowCanvas, scratchCanvas].forEach(c => {
+        c.width = window.innerWidth;
+        c.height = window.innerHeight;
+      });
+      drawStars();
+      if (frostActive) drawFrost();
+    }
+    window.addEventListener('resize', resize);
+
+    // Stars
+    const stars = [];
+    function drawStars() {
+      stars.length = 0;
+      ctxSky.clearRect(0, 0, sky.width, sky.height);
+      for (let i = 0; i < 120; i++) {
+        stars.push({
+          x: Math.random() * sky.width,
+          y: Math.random() * sky.height,
+          r: Math.random() * 1.5 + 0.5,
+          a: Math.random() * 0.8 + 0.2
+        });
+      }
+      stars.forEach(s => {
+        ctxSky.beginPath();
+        ctxSky.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctxSky.fillStyle = `rgba(255,255,255,${s.a})`;
+        ctxSky.fill();
+      });
+    }
+
+    // Snow
+    let snowflakes = [];
+    let snowIntensity = 0;
+    function addSnow(count) {
+      for (let i = 0; i < count; i++) {
+        snowflakes.push({
+          x: Math.random() * snowCanvas.width,
+          y: Math.random() * snowCanvas.height,
+          r: Math.random() * 3 + 1,
+          vy: Math.random() * 1 + 0.5
+        });
+      }
+    }
+
+    function updateSnow() {
+      ctxSnow.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+      snowflakes.forEach(f => {
+        f.y += f.vy;
+        if (f.y > snowCanvas.height) f.y = -5;
+        ctxSnow.beginPath();
+        ctxSnow.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        ctxSnow.fillStyle = 'rgba(255,255,255,0.9)';
+        ctxSnow.fill();
+      });
+
+      if (snowflakes.length > 600 && !frostActive) {
+        triggerFrost();
+      }
+
+      requestAnimationFrame(updateSnow);
+    }
+
+    // Shake detection
+    let lastShake = 0;
+    window.addEventListener('devicemotion', e => {
+      const acc = e.accelerationIncludingGravity;
+      if (!acc) return;
+      const total = Math.abs(acc.x) + Math.abs(acc.y) + Math.abs(acc.z);
+      if (total > 22) {
+        const now = Date.now();
+        if (now - lastShake > 300) {
+          lastShake = now;
+          snowIntensity += 1;
+          addSnow(20);
+          message.style.opacity = Math.max(0, 1 - snowIntensity / 15);
+        }
+      }
+    });
+
+    // Frost scratch
+    let frostActive = false;
+    let isScratching = false;
+
+    function triggerFrost() {
+      frostActive = true;
+      scratchCanvas.style.display = 'block';
+      revealText.style.display = 'block';
+      drawFrost();
+    }
+
+    function drawFrost() {
+      ctxScratch.clearRect(0, 0, scratchCanvas.width, scratchCanvas.height);
+      ctxScratch.fillStyle = '#e5e7eb';
+      ctxScratch.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
+      ctxScratch.globalAlpha = 0.15;
+      for (let i = 0; i < 200; i++) {
+        ctxScratch.beginPath();
+        ctxScratch.arc(
+          Math.random() * scratchCanvas.width,
+          Math.random() * scratchCanvas.height,
+          Math.random() * 80 + 20,
+          0,
+          Math.PI * 2
+        );
+        ctxScratch.fillStyle = '#ffffff';
+        ctxScratch.fill();
+      }
+      ctxScratch.globalAlpha = 1;
+
+      // Gift image underneath
+      const img = new Image();
+      img.src = 'https://images.unsplash.com/photo-1513201099705-a9746e1e201f?auto=format&fit=crop&w=1200&q=80';
+      img.onload = () => {
+        ctxScratch.globalCompositeOperation = 'destination-over';
+        ctxScratch.drawImage(img, 0, 0, scratchCanvas.width, scratchCanvas.height);
+        ctxScratch.globalCompositeOperation = 'source-over';
+      };
+    }
+
+    function scratch(x, y) {
+      ctxScratch.globalCompositeOperation = 'destination-out';
+      ctxScratch.beginPath();
+      ctxScratch.arc(x, y, 35, 0, Math.PI * 2);
+      ctxScratch.fill();
+      ctxScratch.globalCompositeOperation = 'source-over';
+    }
+
+    scratchCanvas.addEventListener('pointerdown', () => isScratching = true);
+    scratchCanvas.addEventListener('pointerup', () => isScratching = false);
+    scratchCanvas.addEventListener('pointermove', e => {
+      if (!isScratching) return;
+      scratch(e.clientX, e.clientY);
+    });
+
+    resize();
+    updateSnow();
+  </script></body>
+</html>
