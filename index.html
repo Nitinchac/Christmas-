@@ -33,6 +33,7 @@
       opacity: 0.95;
       transition: opacity 1s ease;
       pointer-events: none;
+      z-index: 10;
     }
 
     #hint {
@@ -54,6 +55,8 @@
       background: rgba(255,255,255,0.2);
       color: white;
       backdrop-filter: blur(6px);
+      z-index: 10;
+      cursor: pointer;
     }
 
     #revealText {
@@ -65,10 +68,7 @@
       opacity: 0;
       transition: opacity 1s ease;
       pointer-events: none;
-    }
-
-    #scratch {
-      display: none;
+      z-index: 10;
     }
   </style>
 </head>
@@ -76,7 +76,8 @@
 <body>
   <canvas id="sky"></canvas>
   <canvas id="snow"></canvas>
-  <canvas id="scratch"></canvas>
+  <canvas id="image"></canvas>
+  <canvas id="frost"></canvas>
 
   <div id="message">
     Christmas is almost here ✨
@@ -84,30 +85,30 @@
   </div>
 
   <button id="motionBtn">Tap to allow magic ✨</button>
-
   <div id="revealText">Rub the frost to reveal your surprise</div>
 
   <script>
     const sky = document.getElementById('sky');
-    const snowCanvas = document.getElementById('snow');
-    const scratchCanvas = document.getElementById('scratch');
+    const snow = document.getElementById('snow');
+    const imageCanvas = document.getElementById('image');
+    const frost = document.getElementById('frost');
 
     const ctxSky = sky.getContext('2d');
-    const ctxSnow = snowCanvas.getContext('2d');
-    const ctxScratch = scratchCanvas.getContext('2d');
+    const ctxSnow = snow.getContext('2d');
+    const ctxImage = imageCanvas.getContext('2d');
+    const ctxFrost = frost.getContext('2d');
 
     const message = document.getElementById('message');
     const revealText = document.getElementById('revealText');
     const motionBtn = document.getElementById('motionBtn');
 
     function resize() {
-      [sky, snowCanvas, scratchCanvas].forEach(c => {
+      [sky, snow, imageCanvas, frost].forEach(c => {
         c.width = window.innerWidth;
         c.height = window.innerHeight;
       });
       drawStars();
     }
-
     window.addEventListener('resize', resize);
 
     function drawStars() {
@@ -126,59 +127,59 @@
       }
     }
 
+    // Snow
     let snowflakes = [];
     let snowStartTime = null;
     let frostTriggered = false;
 
-    function addSnow(count) {
-      for (let i = 0; i < count; i++) {
+    function addSnow(n) {
+      for (let i = 0; i < n; i++) {
         snowflakes.push({
-          x: Math.random() * snowCanvas.width,
-          y: Math.random() * snowCanvas.height,
+          x: Math.random() * snow.width,
+          y: Math.random() * snow.height,
           r: Math.random() * 3 + 1,
           vy: Math.random() * 1 + 0.6
         });
       }
     }
 
-    function updateSnow(timestamp) {
-      ctxSnow.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+    function updateSnow(t) {
+      ctxSnow.clearRect(0, 0, snow.width, snow.height);
 
-      if (snowflakes.length && !snowStartTime) snowStartTime = timestamp;
+      if (snowflakes.length && !snowStartTime) snowStartTime = t;
 
       snowflakes.forEach(f => {
         f.y += f.vy;
-        if (f.y > snowCanvas.height) f.y = -5;
+        if (f.y > snow.height) f.y = -5;
         ctxSnow.beginPath();
         ctxSnow.arc(f.x, f.y, f.r, 0, Math.PI * 2);
         ctxSnow.fillStyle = 'rgba(255,255,255,0.9)';
         ctxSnow.fill();
       });
 
-      if (snowStartTime && !frostTriggered && timestamp - snowStartTime > 5000) {
+      if (snowStartTime && !frostTriggered && t - snowStartTime > 5000) {
         frostTriggered = true;
-        triggerFrost();
+        showFrost();
       }
 
       requestAnimationFrame(updateSnow);
     }
 
+    // Motion
     function handleShake(e) {
-      const acc = e.accelerationIncludingGravity;
-      if (!acc) return;
-
-      const force = Math.abs(acc.x) + Math.abs(acc.y) + Math.abs(acc.z);
+      const a = e.accelerationIncludingGravity;
+      if (!a) return;
+      const force = Math.abs(a.x) + Math.abs(a.y) + Math.abs(a.z);
       if (force > 22) {
         addSnow(20);
-        message.style.opacity = Math.max(0, message.style.opacity - 0.05);
+        message.style.opacity = Math.max(0, parseFloat(message.style.opacity || 0.95) - 0.05);
       }
     }
 
     function enableMotion() {
-      if (typeof DeviceMotionEvent !== 'undefined' &&
-          typeof DeviceMotionEvent.requestPermission === 'function') {
-        DeviceMotionEvent.requestPermission().then(res => {
-          if (res === 'granted') {
+      if (typeof DeviceMotionEvent?.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission().then(r => {
+          if (r === 'granted') {
             window.addEventListener('devicemotion', handleShake);
             motionBtn.style.display = 'none';
           }
@@ -188,48 +189,56 @@
         motionBtn.style.display = 'none';
       }
     }
-
     motionBtn.addEventListener('click', enableMotion);
 
-    let scratching = false;
-
-    function triggerFrost() {
-      scratchCanvas.style.display = 'block';
-
+    // Frost + image (separate layers)
+    function showFrost() {
       const img = new Image();
-      img.src = 'gift.jpg';
-
+      img.crossOrigin = 'anonymous';
+      // Use the correct path to your image in the GitHub repository
+      img.src = 'https://raw.githubusercontent.com/nitinchac/Christmas-/main/gift.jpg';
+      
       img.onload = () => {
-        // 1. Draw image FIRST
         const scale = Math.max(
-          scratchCanvas.width / img.width,
-          scratchCanvas.height / img.height
+          imageCanvas.width / img.width,
+          imageCanvas.height / img.height
         );
-        const x = (scratchCanvas.width - img.width * scale) / 2;
-        const y = (scratchCanvas.height - img.height * scale) / 2;
-        ctxScratch.drawImage(img, x, y, img.width * scale, img.height * scale);
+        const x = (imageCanvas.width - img.width * scale) / 2;
+        const y = (imageCanvas.height - img.height * scale) / 2;
+        ctxImage.drawImage(img, x, y, img.width * scale, img.height * scale);
 
-        // 2. Draw frost ON TOP
-        ctxScratch.fillStyle = '#e5e7eb';
-        ctxScratch.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
+        ctxFrost.fillStyle = '#e5e7eb';
+        ctxFrost.fillRect(0, 0, frost.width, frost.height);
 
+        revealText.style.opacity = 1;
+      };
+      
+      img.onerror = () => {
+        console.error('Failed to load image. Check the path.');
+        // Fallback: show a message instead
+        ctxImage.fillStyle = '#ffffff';
+        ctxImage.font = '24px sans-serif';
+        ctxImage.textAlign = 'center';
+        ctxImage.fillText('Your surprise awaits! 🎁', imageCanvas.width / 2, imageCanvas.height / 2);
+        
+        ctxFrost.fillStyle = '#e5e7eb';
+        ctxFrost.fillRect(0, 0, frost.width, frost.height);
         revealText.style.opacity = 1;
       };
     }
 
+    let scratching = false;
     function scratch(x, y) {
-      ctxScratch.globalCompositeOperation = 'destination-out';
-      ctxScratch.beginPath();
-      ctxScratch.arc(x, y, 80, 0, Math.PI * 2);
-      ctxScratch.fill();
-      ctxScratch.globalCompositeOperation = 'source-over';
+      ctxFrost.globalCompositeOperation = 'destination-out';
+      ctxFrost.beginPath();
+      ctxFrost.arc(x, y, 90, 0, Math.PI * 2);
+      ctxFrost.fill();
+      ctxFrost.globalCompositeOperation = 'source-over';
     }
 
-    scratchCanvas.addEventListener('pointerdown', () => scratching = true);
-    scratchCanvas.addEventListener('pointerup', () => scratching = false);
-    scratchCanvas.addEventListener('pointermove', e => {
-      if (scratching) scratch(e.clientX, e.clientY);
-    });
+    frost.addEventListener('pointerdown', () => scratching = true);
+    frost.addEventListener('pointerup', () => scratching = false);
+    frost.addEventListener('pointermove', e => scratching && scratch(e.clientX, e.clientY));
 
     resize();
     updateSnow();
